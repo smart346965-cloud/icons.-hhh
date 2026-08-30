@@ -1,0 +1,34 @@
+herename: Convert PNG to SVG
+
+on:
+  push:
+    paths:
+      - 'input_images/*.png' # يعمل التلقائياً عند رفع صورة PNG داخل المجلد
+  workflow_dispatch:          # يتيح لك تشغيله يدوياً بنقرة زر
+
+jobs:
+  vectorize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install VTracer
+        run: |
+          cargo install vtracer-cli
+
+      - name: Convert Images to SVG
+        run: |
+          mkdir -p output_svg
+          for img in input_images/*.png; do
+            filename=$(basename "$img" .png)
+            vtracer --input "$img" --output "output_svg/${filename}.svg" --colormode color --hierarchical stacked
+          done
+
+      - name: Commit and Push SVG Files
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add output_svg/
+          git commit -m "Auto-converted PNG to SVG" || exit 0
+          git push
